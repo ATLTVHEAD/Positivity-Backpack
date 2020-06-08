@@ -2,6 +2,7 @@ import socket
 import cfg
 import re
 import time
+import random
 
 # import Numpy and Open CV for python
 import numpy as np
@@ -100,9 +101,12 @@ def getUSER(r):
         print(AttributeError)
     return user
 
+t=0
 
 
 while True:
+    ot=time.time()
+    diff = ot - t
     #listen to twitch messages incoming
     response = sock.recv(1024).decode("utf-8")
     print(response)
@@ -115,7 +119,7 @@ while True:
         who = getUSER(response)
 
         # If the message matches one of the cammands do something
-        if "love"in mess.strip():
+        if "love" in mess.strip() or "love" == mess.strip():
             #Sets the image to be displayed to our image 1, do the same for every message 
             displayimage = message1
 
@@ -158,11 +162,11 @@ while True:
         elif "got" in mess.strip():
             displayimage = message14
 
-        elif "beautiful" in mess.strip():
+        elif "beautiful" in mess.strip() or "beautiful" == mess.strip():
             displayimage = message15
 
-        elif "breathe" in mess.strip():
-            displayimage = message16
+        #elif "breathe" in mess.strip():
+            #displayimage = message16
 
         elif "united" in mess.strip():
             displayimage = message17
@@ -185,12 +189,14 @@ while True:
         elif "play" in mess.strip():
             displayimage = message23
 
-
-        
-
-        #add a delay so twitch doesn't get mad at our bot
-        time.sleep(1/cfg.RATE)
-
+    # add in a countdown to change to a random display after a period of time of no chat interaction
+#    if diff > 60:
+#        t=time.time()
+#        diff=0
+#        ot=time.time()
+#        print("Changing message")
+#        # call a random command at this time
+#        displayimage = random.choice(messages)
     #displays the image output to the fullscreened window
     cv2.imshow("PositiveMessage",displayimage)
     #Setting this wait key to 1, converts the output to video, only showing the image every 0.1 seconds. allowing for the display image output to be set to various images
