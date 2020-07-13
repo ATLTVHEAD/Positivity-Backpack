@@ -1,0 +1,11 @@
+# Prerequisites
+*.d
+
+# Compiled Object files
+*.slo
+*.lo
+*.o
+*.obj
+
+#ignore config file
+cfg.py

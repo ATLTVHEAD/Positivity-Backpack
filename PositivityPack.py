@@ -3,16 +3,29 @@ import cfg
 import re
 import time
 import random
-
-# import Numpy and Open CV for python
-import numpy as np
+import numpy as np 
+import pandas as pd 
+import datetime
+import os, os.path
+import tensorflow as tf
+import serial
 import cv2
+import traceback
 
+#PORT = "/dev/ttyUSB0"
+#PORT = "/dev/ttyUSB1"
+PORT = "COM8"
+
+serialport = None
+serialport = serial.Serial(PORT, 115200, timeout=0.05)
+
+#load Model
+model = tf.keras.models.load_model('../Atltvhead-Gesture-Recognition-Bracer/Model/cnn_model.h5')
 
 # These commands set the screen to full on whatever display is being used. Don't use if you dont mind it being in a window that can move around
-cv2.namedWindow("PositiveMessage", cv2.WND_PROP_FULLSCREEN)
+#cv2.namedWindow("PositiveMessage", cv2.WND_PROP_FULLSCREEN)
 #cv2.moveWindow("PositiveMessage", screen.x - 1, screen.y - 1)
-cv2.setWindowProperty("PositiveMessage", cv2.WND_PROP_FULLSCREEN,cv2.WINDOW_FULLSCREEN)
+#cv2.setWindowProperty("PositiveMessage", cv2.WND_PROP_FULLSCREEN,cv2.WINDOW_FULLSCREEN)
 
 #loading some of the images in and resizing them to the dimensions of the screen, which isn't really needed but hey whatevas
 message1= cv2.imread('photos\img_2.1.1.png')
@@ -63,9 +76,6 @@ message23= cv2.imread('photos\img_2.1.23.png')
 message23= cv2.resize(message23,(1024,600),interpolation = cv2.INTER_AREA)
 
 
-
-
-
 messages = [message1,message2,message3,message4,message5,message6,message7,message8,message9,message10,message11,message12,message13,message14,message15,message16,message17,message18,message19,message20,message21,message22,message23]
 
 
@@ -101,12 +111,89 @@ def getUSER(r):
         print(AttributeError)
     return user
 
+
+#Get Data from imu. Waits for incomming data and data stop
+def get_imu_data():
+    global serialport
+    if not serialport:
+        # open serial port
+        serialport = serial.Serial(PORT, 115200, timeout=0.05)
+        # check which port was really used
+        print("Opened", serialport.name)
+        # Flush input
+        time.sleep(3)
+        serialport.readline()
+
+    # Poll the serial port
+    line = str(serialport.readline(),'utf-8')
+    if not line:
+        return None
+ 
+    vals = line.replace("Uni:", "").strip().split(',')
+ 
+    if len(vals) != 7:
+        return None
+    try:
+        vals = [float(i) for i in vals]
+    except ValueError:
+        return ValueError
+ 
+    return vals
+
+# Create Reshape function for each row of the dataset
+def reshape_function(data):
+    reshaped_data = tf.reshape(data, [-1, 3, 1])
+    return reshaped_data
+
+# header for the incomming data
+header = ["deltaTime","Acc_X","Acc_Y","Acc_Z","Gyro_X","Gyro_Y","Gyro_Z"]
+
+#Create a way to see the length of the data incomming, needs to be 760 points. Used for testing incomming data
+def dataFrameLenTest(data):
+    df=pd.DataFrame(data,columns=header)
+    x=len(df[['Acc_X','Acc_Y','Acc_Z']].to_numpy())
+    print(x)
+    return x
+
+#Create a pipeline to process incomming data for the model to read and handle
+def data_pipeline(data_a):
+    df = pd.DataFrame(data_a, columns = header)
+    temp=df[['Acc_X','Acc_Y','Acc_Z']].to_numpy()
+    tensor_set = tf.data.Dataset.from_tensor_slices(
+        (np.array([temp.tolist()],dtype=np.float64)))
+    tensor_set_cnn = tensor_set.map(reshape_function)
+    tensor_set_cnn = tensor_set_cnn.batch(192)
+    return tensor_set_cnn
+
+#define Gestures, current data, temp data holder
+gest_id = {0:'single_wave', 1:'fist_pump', 2:'random_motion', 3:'speed_mode'}
+data = []
+dataholder=[]
+dataCollecting = False
+gesture=''
+old_gesture=''
 t=0
 
+#flush the serial port
+serialport.flush()
 
-while True:
-    ot=time.time()
-    diff = ot - t
+def gesture_Handler(data,dataholder,gesture,old_gesture):
+    dataholder = get_imu_data()
+    if dataholder != None:
+        dataCollecting=True
+        data.append(dataholder)
+    if dataholder == None and dataCollecting == True:
+        if len(data) == 760:
+            prediction = np.argmax(model.predict(data_pipeline(data)), axis=1)
+            gesture=gest_id[prediction[0]]
+        if gesture != old_gesture:
+            print(gesture)
+        data = []
+        dataCollecting = False
+        old_gesture=gesture
+
+
+def twitch_Handler(sock,displayimage):
     #listen to twitch messages incoming
     response = sock.recv(1024).decode("utf-8")
     print(response)
@@ -165,8 +252,8 @@ while True:
         elif "beautiful" in mess.strip() or "beautiful" == mess.strip():
             displayimage = message15
 
-        #elif "breathe" in mess.strip():
-            #displayimage = message16
+        elif "breathe" in mess.strip():
+            displayimage = message16
 
         elif "united" in mess.strip():
             displayimage = message17
@@ -189,15 +276,19 @@ while True:
         elif "play" in mess.strip():
             displayimage = message23
 
-    # add in a countdown to change to a random display after a period of time of no chat interaction
-#    if diff > 60:
-#        t=time.time()
-#        diff=0
-#        ot=time.time()
-#        print("Changing message")
-#        # call a random command at this time
-#        displayimage = random.choice(messages)
-    #displays the image output to the fullscreened window
+
+
+while True:
+    try:
+        gesture_Handler(data,dataholder,gesture,old_gesture)
+    except Exception:
+        print('Gesture Problems')
+    try:    
+        twitch_Handler(sock,displayimage)
+        print(Exception)
+    except Exception:
+        print("Twitch Errors")
+        print(Exception)
     cv2.imshow("PositiveMessage",displayimage)
     #Setting this wait key to 1, converts the output to video, only showing the image every 0.1 seconds. allowing for the display image output to be set to various images
     cv2.waitKey(1)
