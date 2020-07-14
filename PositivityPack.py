@@ -89,6 +89,7 @@ sock.connect((cfg.HOST,cfg.PORT))
 sock.send("PASS {}\r\n".format(cfg.PASS).encode("utf-8"))
 sock.send("NICK {}\r\n".format(cfg.NICK).encode("utf-8"))
 sock.send("JOIN {}\r\n".format(cfg.CHAN).encode("utf-8"))
+sock.setblocking(0)
 
 #handling of some of the string characters in the twitch message
 chat_message = re.compile(r"^:\w+!\w+@\w+.tmi.twitch.tv PRIVMSG #\w+ :")
@@ -166,18 +167,16 @@ def data_pipeline(data_a):
     return tensor_set_cnn
 
 #define Gestures, current data, temp data holder
-gest_id = {0:'single_wave', 1:'fist_pump', 2:'random_motion', 3:'speed_mode'}
+gest_id = {0:'wave_mode', 1:'fist_pump_mode', 2:'random_motion_mode', 3:'speed_mode'}
 data = []
 dataholder=[]
 dataCollecting = False
 gesture=''
 old_gesture=''
 t=0
+ot=0
 
-#flush the serial port
-serialport.flush()
-
-def gesture_Handler(data,dataholder,gesture,old_gesture):
+def gesture_Handler(sock,data,dataholder,dataCollecting,gesture,old_gesture):
     dataholder = get_imu_data()
     if dataholder != None:
         dataCollecting=True
@@ -186,112 +185,103 @@ def gesture_Handler(data,dataholder,gesture,old_gesture):
         if len(data) == 760:
             prediction = np.argmax(model.predict(data_pipeline(data)), axis=1)
             gesture=gest_id[prediction[0]]
-        if gesture != old_gesture:
-            print(gesture)
         data = []
         dataCollecting = False
-        old_gesture=gesture
+    return data,dataholder,dataCollecting,gesture,old_gesture
 
 
-def twitch_Handler(sock,displayimage):
-    #listen to twitch messages incoming
-    response = sock.recv(1024).decode("utf-8")
-    print(response)
-    #pong the pings to stay connected 
-    if response == "PING :tmi.twitch.tv\r\n":
-        sock.send("PONG :tmi.twitch.tv\r\n".encode("utf-8"))
-    else:
-        #otherwise get the user and message
-        mess= getMSG(response)
-        who = getUSER(response)
-
-        # If the message matches one of the cammands do something
-        if "love" in mess.strip() or "love" == mess.strip():
-            #Sets the image to be displayed to our image 1, do the same for every message 
-            displayimage = message1
-
-        elif "values" in mess.strip():
-            displayimage = message2
-
-        elif "dont" in mess.strip():
-            displayimage = message3
-
-        elif "perect" in mess.strip():
-            displayimage = message4
-
-        elif "future" in mess.strip():
-            displayimage = message5
-        
-        elif "friends" in mess.strip():
-            displayimage = message6
-
-        elif  "community" in mess.strip():
-            displayimage = message7
-        
-        elif "neighbor" in mess.strip():
-            displayimage = message8
-
-        elif "another" in mess.strip():
-            displayimage = message9
-
-        elif "together" in mess.strip():
-            displayimage = message10
-
-        elif "gift" in mess.strip():
-            displayimage = message11
-        
-        elif "nice" in mess.strip():
-            displayimage = message12
-
-        elif "look"in mess.strip():
-            displayimage = message13
-        
-        elif "got" in mess.strip():
-            displayimage = message14
-
-        elif "beautiful" in mess.strip() or "beautiful" == mess.strip():
-            displayimage = message15
-
-        elif "breathe" in mess.strip():
-            displayimage = message16
-
-        elif "united" in mess.strip():
-            displayimage = message17
-
-        elif "heart" in mess.strip():
-            displayimage = message18
-
-        elif "weird" in mess.strip():
-            displayimage = message19
-
-        elif "okay" in mess.strip():
-            displayimage = message20
-
-        elif "aware" in mess.strip():
-            displayimage = message21
-
-        elif "be" in mess.strip():
-            displayimage = message22
-
-        elif "play" in mess.strip():
-            displayimage = message23
+def message_changer(displayimage, messa):
+    #otherwise get the user and message
+    mess= getMSG(messa)
+    # If the message matches one of the cammands do something
+    if "love" in mess.strip() or "love" == mess.strip():
+        #Sets the image to be displayed to our image 1, do the same for every message 
+        displayimage = message1
+    elif "values" in mess.strip():
+        displayimage = message2
+    elif "dont" in mess.strip():
+        displayimage = message3
+    elif "perect" in mess.strip():
+        displayimage = message4
+    elif "future" in mess.strip():
+        displayimage = message5
+    elif "friends" in mess.strip():
+        displayimage = message6
+    elif  "community" in mess.strip():
+        displayimage = message7
+    elif "neighbor" in mess.strip():
+        displayimage = message8
+    elif "another" in mess.strip():
+        displayimage = message9
+    elif "together" in mess.strip():
+        displayimage = message10
+    elif "gift" in mess.strip():
+        displayimage = message11
+    elif "nice" in mess.strip():
+        displayimage = message12
+    elif "look"in mess.strip():
+        displayimage = message13
+    elif "got" in mess.strip():
+        displayimage = message14
+    elif "beautiful" in mess.strip():
+        displayimage = message15
+    elif "breathe" in mess.strip():
+        displayimage = message16
+    elif "united" in mess.strip():
+        displayimage = message17
+    elif "heart" in mess.strip():
+        displayimage = message18
+    elif "weird" in mess.strip():
+        displayimage = message19
+    elif "okay" in mess.strip():
+        displayimage = message20
+    elif "aware" in mess.strip():
+        displayimage = message21
+    elif "be" in mess.strip():
+        displayimage = message22
+    elif "play" in mess.strip():
+        displayimage = message23
+    return displayimage
 
 
 
-while True:
-    try:
-        gesture_Handler(data,dataholder,gesture,old_gesture)
-    except Exception:
-        print('Gesture Problems')
-    try:    
-        twitch_Handler(sock,displayimage)
-        print(Exception)
-    except Exception:
-        print("Twitch Errors")
-        print(Exception)
-    cv2.imshow("PositiveMessage",displayimage)
-    #Setting this wait key to 1, converts the output to video, only showing the image every 0.1 seconds. allowing for the display image output to be set to various images
-    cv2.waitKey(1)
+if __name__ == "__main__":
+    #flush the serial port
+    serialport.flush()
+    while True:
+        t=time.time()
+        try:
+            #listen to twitch messages incoming
+            response = sock.recv(1024).decode("utf-8")
+        except:
+            data,dataholder,dataCollecting,gesture,old_gesture = gesture_Handler(sock,data,dataholder,dataCollecting,gesture,old_gesture)
+            if gesture != old_gesture:
+                chat(sock,'!' + gesture)
+                #print(gesture)    
+                old_gesture=gesture        
+            if t-ot > 30:
+                displayimage = random.choice(messages)
+                ot=t
+            cv2.imshow("PositiveMessage",displayimage)
+            cv2.waitKey(1)
+            continue
+        else:
+            if len(response)==0:
+                print('orderly shutdown on the server end')
+                sock = socket.socket()
+                sock.connect((cfg.HOST,cfg.PORT))
+                sock.send("PASS {}\r\n".format(cfg.PASS).encode("utf-8"))
+                sock.send("NICK {}\r\n".format(cfg.NICK).encode("utf-8"))
+                sock.send("JOIN {}\r\n".format(cfg.CHAN).encode("utf-8"))
+                sock.setblocking(0)
+            else:
+                #print(response)
+                if response == "PING :tmi.twitch.tv\r\n":
+                    sock.send("PONG :tmi.twitch.tv\r\n".encode("utf-8"))
+                else:
+                    displayimage = message_changer(displayimage,response)
+                    cv2.imshow("PositiveMessage",displayimage)
+                    cv2.waitKey(1)
     
-#Closes all the windows
-cv2.destroyAllWindows()
+    #Closes all the windows
+    cv2.destroyAllWindows()
