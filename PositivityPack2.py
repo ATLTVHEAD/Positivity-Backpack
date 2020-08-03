@@ -3,7 +3,7 @@
 #   Display an image that changes according to what is said in twitch chat or after 30 seconds    
 # Written by: Nate Damen
 # Created on July 13th 2020
-# Updated on July 15th 2020
+# Updated on AUG 3rd 2020
 
 
 import socket
@@ -20,15 +20,15 @@ import serial
 import cv2
 import traceback
 
-#PORT = "/dev/ttyUSB0"
+PORT = "/dev/ttyUSB0"
 #PORT = "/dev/ttyUSB1"
-PORT = "COM8"
+#PORT = "COM8"
 
 serialport = None
 serialport = serial.Serial(PORT, 115200, timeout=0.05)
 
 #load Model
-model = tf.keras.models.load_model('../Atltvhead-Gesture-Recognition-Bracer/Model/cnn_model.h5')
+model = tf.keras.models.load_model('../Atltvhead-Gesture-Recognition-Bracer/Model/cnn_model2_half.h5')
 
 # These commands set the screen to full on whatever display is being used. Don't use if you dont mind it being in a window that can move around
 cv2.namedWindow("PositiveMessage", cv2.WND_PROP_FULLSCREEN)
