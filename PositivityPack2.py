@@ -195,7 +195,7 @@ def gesture_Handler(sock,data,dataholder,dataCollecting,gesture,old_gesture):
             gesture=gest_id[prediction[0]]
         data = []
         dataCollecting = False
-    return data,dataholder,dataCollecting,gesture,old_gesture
+    return gesture,old_gesture
 
 
 def message_changer(displayimage, messa):
@@ -262,7 +262,7 @@ if __name__ == "__main__":
             #listen to twitch messages incoming
             response = sock.recv(1024).decode("utf-8")
         except:
-            data,dataholder,dataCollecting,gesture,old_gesture = gesture_Handler(sock,data,dataholder,dataCollecting,gesture,old_gesture)
+            gesture,old_gesture = gesture_Handler(sock,data,dataholder,dataCollecting,gesture,old_gesture)
             if gesture != old_gesture:
                 chat(sock,'!' + gesture)
                 #print(gesture)    
