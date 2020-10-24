@@ -84,12 +84,58 @@ message23= cv2.imread('photos/img_2.1.23.png')
 message23= cv2.resize(message23,(1024,600),interpolation = cv2.INTER_AREA)
 
 
-messages = [message1,message2,message3,message4,message5,message6,message7,message8,message9,message10,message11,message12,message13,message14,message15,message16,message17,message18,message19,message20,message21,message22,message23]
+messages = (
+    message1,
+    message2,
+    message3,
+    message4,
+    message5,
+    message6,
+    message7,
+    message8,
+    message9,
+    message10,
+    message11,
+    message12,
+    message13,
+    message14,
+    message15,
+    message16,
+    message17,
+    message18,
+    message19,
+    message20,
+    message21,
+    message22,
+    message23)
 
+messages_text = (
+    "Fuel the Future with Love",
+    "Stay True to your Values",
+    "Don't Give Up Friend!",
+    "You don't have to be perfect.",
+    "The future is inside of us",
+    "We are friends :)",
+    "We are a community",
+    "We are all neighbors",
+    "We are there for one another",
+    "We are in this together",
+    "You are a gift",
+    "Nice Moves!",
+    "you look great today :)",
+    "You've Got This!",
+    "You are a beautiful human",
+    "Don't forget to breathe",
+    "We are united!",
+    "Open Mind, Open Heart",
+    "Keep It Weird!",
+    "Everything will end up alright, even if it's painful in this moment",
+    "You are loving awareness",
+    "Be Yourself!",
+    "There is power in play!")
 
 #Creating a variable that we can swap messages to
 displayimage = message1
-
 
 #Creating our socket and passing on info for twitch
 sock = socket.socket()
@@ -257,6 +303,7 @@ def message_changer(displayimage, messa):
         displayimage = random.choice(messages)
     elif "Sending Positive Message" in mess.strip():
         displayimage = random.choice(messages)
+        chat(sock, messages_text(messages.index(displayimage)))
     return displayimage
 
 
