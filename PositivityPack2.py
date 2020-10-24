@@ -249,6 +249,14 @@ def message_changer(displayimage, messa):
         displayimage = message22
     elif "play" in mess.strip():
         displayimage = message23
+    elif "TVHEAD MAGIC" in mess.strip():
+        displayimage = random.choice(messages)
+    elif "COMPUTER VISION" in mess.strip():
+        displayimage = random.choice(messages)
+    elif "Terminal_VIEW" in mess.strip():
+        displayimage = random.choice(messages)
+    elif "Sending Positive Message" in mess.strip():
+        displayimage = random.choice(messages)
     return displayimage
 
 
