@@ -3,7 +3,7 @@
 #   Display an image that changes according to what is said in twitch chat or after 30 seconds    
 # Written by: Nate Damen
 # Created on July 13th 2020
-# Updated on AUG 3rd 2020
+# Updated on OCT 24th 2020
 
 
 import socket
@@ -220,28 +220,19 @@ def data_pipeline(data_a):
     tensor_set_cnn = tensor_set_cnn.batch(192)
     return tensor_set_cnn
 
-#define Gestures, current data, temp data holder
-gest_id = {0:'wave_mode', 1:'fist_pump_mode', 2:'random_motion_mode', 3:'speed_mode', 4:'pumped_up_mode'}
-data = []
-dataholder=[]
-dataCollecting = False
-gesture=''
-old_gesture=''
-t=0
-ot=0
-
-def gesture_Handler(sock,data,dataholder,dataCollecting,gesture,old_gesture):
-    dataholder = get_imu_data()
+def gesture_Handler(sock, rw, data, dataholder, dataCollecting, gesture, old_gesture):
+    dataholder = np.fromstring(get_imu_data(), sep=',')
     if dataholder != None:
         dataCollecting=True
-        data.append(dataholder)
+        data[rw] = dataholder
+        rw += 1
     if dataholder == None and dataCollecting == True:
-        if len(data) == 380:
+        if row == 380:
             prediction = np.argmax(model.predict(data_pipeline(data)), axis=1)
             gesture=gest_id[prediction[0]]
-        data = []
+        rw = 0
         dataCollecting = False
-    return gesture,old_gesture
+    return rw, gesture, old_gesture
 
 
 def message_changer(displayimage, messa):
@@ -309,6 +300,17 @@ def message_changer(displayimage, messa):
 
 
 if __name__ == "__main__":
+    #define Gestures, current data, temp data holder
+    gest_id = {0:'wave_mode', 1:'fist_pump_mode', 2:'random_motion_mode', 3:'speed_mode', 4:'pumped_up_mode'}
+    data = np.zeros(shape=(380,7))
+    dataholder = np.zeros(shape=(1,7))
+    row = 0
+    dataCollecting = False
+    gesture = ''
+    old_gesture = ''
+    t = 0
+    ot = 0
+
     #flush the serial port
     serialport.flush()
     while True:
@@ -317,7 +319,7 @@ if __name__ == "__main__":
             #listen to twitch messages incoming
             response = sock.recv(1024).decode("utf-8")
         except:
-            gesture,old_gesture = gesture_Handler(sock,data,dataholder,dataCollecting,gesture,old_gesture)
+            row, gesture, old_gesture = gesture_Handler(sock,row,data,dataholder,dataCollecting,gesture,old_gesture)
             if gesture != old_gesture:
                 chat(sock,'!' + gesture)
                 #print(gesture)    
