@@ -20,9 +20,9 @@ import serial
 import cv2
 import traceback
 
-PORT = "/dev/ttyUSB0"
+#PORT = "/dev/ttyUSB0"
 #PORT = "/dev/ttyUSB1"
-#PORT = "COM8"
+PORT = "COM5"
 
 serialport = None
 serialport = serial.Serial(PORT, 115200, timeout=0.05)
@@ -204,35 +204,34 @@ def reshape_function(data):
 header = ["deltaTime","Acc_X","Acc_Y","Acc_Z","Gyro_X","Gyro_Y","Gyro_Z"]
 
 #Create a way to see the length of the data incomming, needs to be 380 points. Used for testing incomming data
-def dataFrameLenTest(data):
-    df=pd.DataFrame(data,columns=header)
-    x=len(df[['Acc_X','Acc_Y','Acc_Z']].to_numpy())
-    print(x)
-    return x
+#def dataFrameLenTest(data):
+#    df=pd.DataFrame(data,columns=header)
+#    x=len(df[['Acc_X','Acc_Y','Acc_Z']].to_numpy())
+#    print(x)
+#    return x
 
 #Create a pipeline to process incomming data for the model to read and handle
 def data_pipeline(data_a):
-    df = pd.DataFrame(data_a, columns = header)
-    temp=df[['Acc_X','Acc_Y','Acc_Z']].to_numpy()
-    tensor_set = tf.data.Dataset.from_tensor_slices(
-        (np.array([temp.tolist()],dtype=np.float64)))
+    tensor_set = tf.data.Dataset.from_tensor_slices((data_a[:,:,1:4]))
     tensor_set_cnn = tensor_set.map(reshape_function)
     tensor_set_cnn = tensor_set_cnn.batch(192)
     return tensor_set_cnn
 
 def gesture_Handler(sock, rw, data, dataholder, dataCollecting, gesture, old_gesture):
-    dataholder = np.fromstring(get_imu_data(), sep=',')
-    if dataholder != None:
-        dataCollecting=True
-        data[rw] = dataholder
+    dataholder = np.array(get_imu_data())
+    if dataholder.all() != None:
+        #print(dataholder)
+        dataCollecting = True
+        data[0, rw, :] = dataholder
         rw += 1
-    if dataholder == None and dataCollecting == True:
+    if dataholder.all() == None and dataCollecting == True:
+        #print(data.itemsize * data.size)
         if row == 380:
             prediction = np.argmax(model.predict(data_pipeline(data)), axis=1)
             gesture=gest_id[prediction[0]]
         rw = 0
         dataCollecting = False
-    return rw, gesture, old_gesture
+    return rw, gesture, old_gesture, dataCollecting
 
 
 def message_changer(displayimage, messa):
@@ -304,7 +303,7 @@ def message_changer(displayimage, messa):
 if __name__ == "__main__":
     #define Gestures, current data, temp data holder
     gest_id = {0:'wave_mode', 1:'fist_pump_mode', 2:'random_motion_mode', 3:'speed_mode', 4:'pumped_up_mode'}
-    data = np.zeros(shape=(380,7))
+    data = np.zeros(shape=(1,380,7))
     dataholder = np.zeros(shape=(1,7))
     row = 0
     dataCollecting = False
@@ -321,7 +320,7 @@ if __name__ == "__main__":
             #listen to twitch messages incoming
             response = sock.recv(1024).decode("utf-8")
         except:
-            row, gesture, old_gesture = gesture_Handler(sock,row,data,dataholder,dataCollecting,gesture,old_gesture)
+            row, gesture, old_gesture, dataCollecting = gesture_Handler(sock,row,data,dataholder,dataCollecting,gesture,old_gesture)
             if gesture != old_gesture:
                 chat(sock,'!' + gesture)
                 #print(gesture)    
