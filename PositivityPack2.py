@@ -236,56 +236,58 @@ def gesture_Handler(sock, rw, data, dataholder, dataCollecting, gesture, old_ges
 
 
 def message_changer(displayimage, messa):
+    global messages_text
+    global messages
     #otherwise get the user and message
     mess= getMSG(messa)
     # If the message matches one of the cammands do something
     if "love" in mess.strip() or "love" == mess.strip():
         #Sets the image to be displayed to our image 1, do the same for every message 
-        displayimage = message1
+        displayimage = messages[0]
     elif "values" in mess.strip():
-        displayimage = message2
+        displayimage = messages[1]
     elif "dont" in mess.strip():
-        displayimage = message3
+        displayimage = messages[2]
     elif "perect" in mess.strip():
-        displayimage = message4
+        displayimage = messages[3]
     elif "future" in mess.strip():
-        displayimage = message5
+        displayimage = messages[4]
     elif "friends" in mess.strip():
-        displayimage = message6
+        displayimage = messages[5]
     elif  "community" in mess.strip():
-        displayimage = message7
+        displayimage = messages[6]
     elif "neighbor" in mess.strip():
-        displayimage = message8
+        displayimage = messages[7]
     elif "another" in mess.strip():
-        displayimage = message9
+        displayimage = messages[8]
     elif "together" in mess.strip():
-        displayimage = message10
+        displayimage = messages[9]
     elif "gift" in mess.strip():
-        displayimage = message11
+        displayimage = messages[10]
     elif "nice" in mess.strip():
-        displayimage = message12
+        displayimage = messages[11]
     elif "look"in mess.strip():
-        displayimage = message13
+        displayimage = messages[12]
     elif "got" in mess.strip():
-        displayimage = message14
+        displayimage = messages[13]
     elif "beautiful" in mess.strip():
-        displayimage = message15
+        displayimage = messages[14]
     elif "breathe" in mess.strip():
-        displayimage = message16
+        displayimage = messages[15]
     elif "united" in mess.strip():
-        displayimage = message17
+        displayimage = messages[16]
     elif "heart" in mess.strip():
-        displayimage = message18
+        displayimage = messages[17]
     elif "weird" in mess.strip():
-        displayimage = message19
+        displayimage = messages[18]
     elif "okay" in mess.strip():
-        displayimage = message20
+        displayimage = messages[19]
     elif "aware" in mess.strip():
-        displayimage = message21
+        displayimage = messages[20]
     elif "be" in mess.strip():
-        displayimage = message22
+        displayimage = messages[21]
     elif "play" in mess.strip():
-        displayimage = message23
+        displayimage = messages[22]
     elif "TVHEAD MAGIC" in mess.strip():
         displayimage = random.choice(messages)
     elif "COMPUTER VISION" in mess.strip():
@@ -294,7 +296,7 @@ def message_changer(displayimage, messa):
         displayimage = random.choice(messages)
     elif "Sending Positive Message" in mess.strip():
         displayimage = random.choice(messages)
-        chat(sock, messages_text(messages.index(displayimage)))
+        chat(sock, messages_text[messages.index(displayimage)])
     return displayimage
 
 
