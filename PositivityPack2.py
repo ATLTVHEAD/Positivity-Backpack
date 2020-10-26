@@ -3,7 +3,7 @@
 #   Display an image that changes according to what is said in twitch chat or after 30 seconds    
 # Written by: Nate Damen
 # Created on July 13th 2020
-# Updated on OCT 24th 2020
+# Updated on OCT 26th 2020
 
 
 import socket
@@ -12,7 +12,6 @@ import re
 import time
 import random
 import numpy as np 
-import pandas as pd 
 import datetime
 import os, os.path
 import tensorflow as tf
@@ -20,9 +19,9 @@ import serial
 import cv2
 import traceback
 
-#PORT = "/dev/ttyUSB0"
+PORT = "/dev/ttyUSB0"
 #PORT = "/dev/ttyUSB1"
-PORT = "COM5"
+#PORT = "COM5"
 
 serialport = None
 serialport = serial.Serial(PORT, 115200, timeout=0.05)
@@ -201,7 +200,7 @@ def reshape_function(data):
     return reshaped_data
 
 # header for the incomming data
-header = ["deltaTime","Acc_X","Acc_Y","Acc_Z","Gyro_X","Gyro_Y","Gyro_Z"]
+#header = ["deltaTime","Acc_X","Acc_Y","Acc_Z","Gyro_X","Gyro_Y","Gyro_Z"]
 
 #Create a way to see the length of the data incomming, needs to be 380 points. Used for testing incomming data
 #def dataFrameLenTest(data):
@@ -299,7 +298,6 @@ def message_changer(displayimage, messa):
     return displayimage
 
 
-
 if __name__ == "__main__":
     #define Gestures, current data, temp data holder
     gest_id = {0:'wave_mode', 1:'fist_pump_mode', 2:'random_motion_mode', 3:'speed_mode', 4:'pumped_up_mode'}
@@ -348,6 +346,5 @@ if __name__ == "__main__":
                     displayimage = message_changer(displayimage,response)
                     cv2.imshow("PositiveMessage",displayimage)
                     cv2.waitKey(1)
-    
     #Closes all the windows
     cv2.destroyAllWindows()
