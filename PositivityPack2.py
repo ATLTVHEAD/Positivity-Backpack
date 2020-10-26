@@ -223,9 +223,10 @@ def gesture_Handler(sock, rw, data, dataholder, dataCollecting, gesture, old_ges
         dataCollecting = True
         data[0, rw, :] = dataholder
         rw += 1
+        if rw > 380:
+            rw = 380
     if dataholder.all() == None and dataCollecting == True:
-        #print(data.itemsize * data.size)
-        if row == 380:
+        if rw == 380:
             prediction = np.argmax(model.predict(data_pipeline(data)), axis=1)
             gesture=gest_id[prediction[0]]
         rw = 0
