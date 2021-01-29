@@ -12,8 +12,8 @@ import pandas as pd
 import serial
 import re
 
-# PORT = "/dev/ttyUSB0"
-PORT = "COM8"
+PORT = "/dev/ttyUSB0"
+#PORT = "COM8"
 
 # How many sensor samples we want to store
 HISTORY_SIZE = 2500
