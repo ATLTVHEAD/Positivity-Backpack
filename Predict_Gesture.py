@@ -65,7 +65,7 @@ def data_pipeline(data_a):
     tensor_set_cnn = tensor_set_cnn.batch(192)
     return tensor_set_cnn
 
-def gesture_Handler(sock, rw, data, dataholder, dataCollecting, gesture, old_gesture):
+def gesture_Handler(rw, data, dataholder, dataCollecting, gesture, old_gesture):
     dataholder = np.array(get_imu_data())
     if dataholder.all() != None:
         #print(dataholder)
@@ -99,7 +99,7 @@ if __name__ == "__main__":
 
     while(1):
         t=time.time()
-        row, gesture, old_gesture, dataCollecting = gesture_Handler(sock,row,data,dataholder,dataCollecting,gesture,old_gesture)
+        row, gesture, old_gesture, dataCollecting = gesture_Handler(row,data,dataholder,dataCollecting,gesture,old_gesture)
         if gesture != old_gesture:
             print(gesture)    
             old_gesture=gesture
