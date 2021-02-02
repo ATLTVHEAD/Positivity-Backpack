@@ -3,7 +3,9 @@
 # Written by: Nate Damen
 # Created on JAN 29th 2021
 
+import cfg
 import numpy as np 
+import paho.mqtt.client as mqtt
 import datetime
 import re
 import os, os.path
@@ -13,7 +15,9 @@ import tensorflow as tf
 import serial
 import traceback
 import gc
-
+import cv2
+import base64
+import numpy as np
 
 PORT = "/dev/ttyUSB0"
 #PORT = "/dev/ttyUSB1"
@@ -24,6 +28,35 @@ serialport = serial.Serial(PORT, 115200, timeout=0.05)
 
 #load Model
 model = tf.keras.models.load_model('../Atltvhead-Gesture-Recognition-Bracer/Model/cnn_model2_half.h5')
+
+# These commands set the screen to full on whatever display is being used. Don't use if you dont mind it being in a window that can move around
+cv2.namedWindow("PositiveMessage", cv2.WND_PROP_FULLSCREEN)
+#cv2.moveWindow("PositiveMessage", screen.x - 1, screen.y - 1)
+cv2.setWindowProperty("PositiveMessage", cv2.WND_PROP_FULLSCREEN,cv2.WINDOW_FULLSCREEN)
+
+# The callback for when the client receives a CONNACK response from the server.
+def on_connect(client, userdata, flags, rc):
+    print("Connected with result code "+str(rc))
+    client.subscribe("stream_live")
+    client.subscribe("screen_shot")
+    client.subscribe("viewer_click")
+
+# The callback for when a PUBLISH message is received from the server.
+def on_message(client, userdata, msg):
+    if (msg.topic == "screen_shot"):
+        print(msg.topic)
+        cv2.imshow("PositiveMessage", stringToRGB(msg.payload))
+        cv2.waitKey(1)    
+    else:
+        print(msg.topic+" "+str(msg.payload))
+
+# Take in base64 string and return cv image
+def stringToRGB(base64_string):
+    imgdata = base64.b64decode(str(base64_string))
+    im_arr = np.frombuffer(imgdata, dtype=np.uint8)  # im_arr is one-dim Numpy array
+    img = cv2.imdecode(im_arr, flags=cv2.IMREAD_COLOR)
+    return img
+
 
 #Get Data from imu. Waits for incomming data and data stop
 def get_imu_data():
@@ -86,6 +119,14 @@ def gesture_Handler(rw, data, dataholder, dataCollecting, gesture, old_gesture):
 
 
 if __name__ == "__main__":
+    
+    mqttc = mqtt.Client()
+    mqttc.on_connect = on_connect
+    mqttc.on_message = on_message
+
+    mqttc.connect("192.168.1.106", 1883, 60)
+    mqttc.loop_start()
+
     #define Gestures, current data, temp data holder, a first cylce boolean,
     gest_id = {0:'wave_mode', 1:'fist_pump_mode', 2:'random_motion_mode', 3:'speed_mode', 4:'pumped_up_mode'}
     data = np.zeros(shape=(1,380,7))
@@ -103,6 +144,7 @@ if __name__ == "__main__":
         t=time.time()
         row, gesture, old_gesture, dataCollecting = gesture_Handler(row,data,dataholder,dataCollecting,gesture,old_gesture)
         if gesture != old_gesture:
-            print(gesture)    
-            old_gesture=gesture
+            print(gesture)
+            mqttc.publish("glove/gesture", gesture)
+            old_gesture=gesture        
         
