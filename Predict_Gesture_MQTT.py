@@ -19,9 +19,9 @@ import cv2
 import base64
 import numpy as np
 
-PORT = "/dev/ttyUSB0"
+#PORT = "/dev/ttyUSB0"
 #PORT = "/dev/ttyUSB1"
-#PORT = "COM8"
+PORT = "COM8"
 
 serialport = None
 serialport = serial.Serial(PORT, 115200, timeout=0.05)
@@ -29,35 +29,14 @@ serialport = serial.Serial(PORT, 115200, timeout=0.05)
 #load Model
 model = tf.keras.models.load_model('../Atltvhead-Gesture-Recognition-Bracer/Model/cnn_model2_half.h5')
 
-# These commands set the screen to full on whatever display is being used. Don't use if you dont mind it being in a window that can move around
-#cv2.namedWindow("PositiveMessage", cv2.WND_PROP_FULLSCREEN)
-#cv2.moveWindow("PositiveMessage", screen.x - 1, screen.y - 1)
-#cv2.setWindowProperty("PositiveMessage", cv2.WND_PROP_FULLSCREEN,cv2.WINDOW_FULLSCREEN)
 
 # The callback for when the client receives a CONNACK response from the server.
 def on_connect(client, userdata, flags, rc):
     print("Connected with result code "+str(rc))
-    #client.subscribe("stream_live")
-    #client.subscribe("screen_shot")
-    #client.subscribe("viewer_click")
 
 # The callback for when a PUBLISH message is received from the server.
 def on_message(client, userdata, msg):
-    #if (msg.topic == "screen_shot"):
-    #    print(msg.topic)
-    #    cv2.imshow("PositiveMessage", stringToRGB(msg.payload))
-    #   cv2.waitKey(1)    
-    #else:
-    #    print(msg.topic+" "+str(msg.payload))
     print(msg.topic+" "+str(msg.payload))
-
-# Take in base64 string and return cv image
-#def stringToRGB(base64_string):
-#    imgdata = base64.b64decode(str(base64_string))
-#    im_arr = np.frombuffer(imgdata, dtype=np.uint8)  # im_arr is one-dim Numpy array
-#    img = cv2.imdecode(im_arr, flags=cv2.IMREAD_COLOR)
-#    return img
-
 
 #Get Data from imu. Waits for incomming data and data stop
 def get_imu_data():

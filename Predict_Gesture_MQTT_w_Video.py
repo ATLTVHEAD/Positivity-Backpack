@@ -44,18 +44,17 @@ def on_connect(client, userdata, flags, rc):
 # The callback for when a PUBLISH message is received from the server.
 def on_message(client, userdata, msg):
     if (msg.topic == "screen_shot"):
-        print(msg.topic)
-        cv2.imshow("PositiveMessage", stringToRGB(msg.payload))
+        #print(msg.topic)
+        cv2.imshow("PositiveMessage", readb64(msg.payload))
         cv2.waitKey(1)    
     else:
         print(msg.topic+" "+str(msg.payload))
 
 # Take in base64 string and return cv image
-def stringToRGB(base64_string):
-    imgdata = base64.b64decode(str(base64_string))
-    im_arr = np.frombuffer(imgdata, dtype=np.uint8)  # im_arr is one-dim Numpy array
-    img = cv2.imdecode(im_arr, flags=cv2.IMREAD_COLOR)
-    return img
+def readb64(uri):
+   nparr = np.fromstring(base64.b64decode(uri), np.uint8)
+   img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+   return img
 
 
 #Get Data from imu. Waits for incomming data and data stop
