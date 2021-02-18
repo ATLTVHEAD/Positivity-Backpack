@@ -44,15 +44,16 @@ def on_connect(client, userdata, flags, rc):
 # The callback for when a PUBLISH message is received from the server.
 def on_message(client, userdata, msg):
     if (msg.topic == "screen_shot"):
-        #print(msg.topic)
-        cv2.imshow("PositiveMessage", readb64(msg.payload))
-        cv2.waitKey(1)    
+        print(msg.topic)
+        img = readb64(msg.payload)
+        cv2.imshow('',img)
+        cv2.waitKey(1)   
     else:
         print(msg.topic+" "+str(msg.payload))
 
 # Take in base64 string and return cv image
 def readb64(uri):
-   nparr = np.fromstring(base64.b64decode(uri), np.uint8)
+   nparr = np.frombuffer(base64.b64decode(uri), np.uint8)
    img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
    return img
 

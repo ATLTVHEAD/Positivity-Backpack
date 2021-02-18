@@ -20,13 +20,15 @@ def on_message(client, userdata, msg):
     if (msg.topic == "screen_shot"):
         print(msg.topic)
         img = readb64(msg.payload)
-        cv2.imshow('',img)
+        cv2.namedWindow ('screen', cv2.WINDOW_NORMAL)
+        cv2.setWindowProperty ('screen', cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_FULLSCREEN)
+        cv2.imshow('screen',img)
         cv2.waitKey(1)
     else:
         print(msg.topic+" "+str(msg.payload))
 
 def readb64(uri):
-   nparr = np.fromstring(base64.b64decode(uri), np.uint8)
+   nparr = np.frombuffer(base64.b64decode(uri), np.uint8)
    img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
    return img
 
