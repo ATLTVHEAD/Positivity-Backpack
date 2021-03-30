@@ -99,12 +99,15 @@ def data_pipeline(data_a):
     tensor_set_cnn = tensor_set_cnn.batch(192)
     return tensor_set_cnn
 
-def gesture_Handler(rw, data, dataholder, dataCollecting, gesture, old_gesture):
+def gesture_Handler(rw, data, dataholder, dataCollecting, gesture, old_gesture, partialTime):
     dataholder = np.array(get_imu_data())
     if dataholder.all() != None:
         #print(dataholder)
         dataCollecting = True
         data[0, rw, :] = dataholder
+        if partialTime >= 0.041:
+            mqttc.publish("gesture_glove/IMU", dataholder)
+            partialTime = time.time()
         rw += 1
         if rw > 380:
             rw = 380
@@ -115,7 +118,14 @@ def gesture_Handler(rw, data, dataholder, dataCollecting, gesture, old_gesture):
             gc.collect()
         rw = 0
         dataCollecting = False
-    return rw, gesture, old_gesture, dataCollecting
+    return rw, gesture, old_gesture, dataCollecting, partialTime
+
+#every 42 milliseconds send an update over mqtt
+def sendPartial(newTime, partialData):
+    if newTime >= 0.041:
+        mqttc.publish("gesture_glove/IMU", partialData)
+        newTime = time.time()
+    return newTime
 
 
 if __name__ == "__main__":
@@ -140,11 +150,12 @@ if __name__ == "__main__":
     time.sleep(3)
     serialport.readline()
 
+    t = time.time()
     while(1):
-        t=time.time()
-        row, gesture, old_gesture, dataCollecting = gesture_Handler(row,data,dataholder,dataCollecting,gesture,old_gesture)
+        elapsedT = time.time() - t 
+        row, gesture, old_gesture, dataCollecting, t = gesture_Handler(row,data,dataholder,dataCollecting,gesture,old_gesture, elapsedT)
         if gesture != old_gesture:
             print(gesture)
-            mqttc.publish("glove/gesture", gesture)
+            mqttc.publish("gesture_glove/gesture", gesture)
             old_gesture=gesture        
         
